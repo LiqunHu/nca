@@ -24,7 +24,6 @@ public/static/dependencies/lightbox2
 public/static/dependencies/moment
 public/static/dependencies/raphael
 public/static/dependencies/select2
-public/static/dependencies/store
 public/static/dependencies/tableexport.jquery.plugin
 public/static/dependencies/x-editable
 public/static/dependencies/ztree
