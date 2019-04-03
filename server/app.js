@@ -6,15 +6,11 @@ const bodyParser = require('body-parser')
 const fs = require('fs')
 
 const config = require('./config')
-const common = require('./util/CommonUtil.js')
-const logger = require('./util/Logger').createLogger('app.js')
 
 let app = express()
 let cors = require('cors')
 let ejs = require('ejs')
 
-let authority = require('./util/Authority')
-let AuthSRV = require('./util/AuthSRV')
 let FileSRV = require('./util/FileSRV')
 let services = require('./service')
 
