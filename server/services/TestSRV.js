@@ -7,10 +7,7 @@ const wkhtmltopdf = require('wkhtmltopdf');
 
 const common = require('../util/CommonUtil');
 const GLBConfig = require('../util/GLBConfig');
-const Sequence = require('../util/Sequence');
 const logger = require('../util/Logger').createLogger('TestSRV');
-const WXPay = require('../util/wxpay');
-const config = require('../config');
 const model = require('../model');
 
 const tb_worklog = model.nca_orderroom;

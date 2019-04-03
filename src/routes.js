@@ -8,7 +8,8 @@ export default new VueRouter({
   scrollBehavior: () => ({y: 0}),
   routes: [
     { path: '*', component: resolve => require(['./components/err404'], resolve) },
-    { path: '/',                component: resolve => require(['./views/login'], resolve) },
+    { path: '/',                redirect: '/home' },
+    { path: '/home',            component: resolve => require(['./views/home'], resolve) },
     { path: '/error404',        component: resolve => require(['./components/err404'], resolve) },
     { path: '/error401',        component: resolve => require(['./components/err401'], resolve) },
     { path: '/error',           component: resolve => require(['./components/errpage'], resolve) }
