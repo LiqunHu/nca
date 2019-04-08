@@ -1,13 +1,16 @@
 const db = require('../../util/db')
 const GLBConfig = require('../../util/GLBConfig')
+// 酷家乐订单表
 
 module.exports = db.defineModel('tbl_integration_orderkujiale', {
   orderkujiale_id: {
+    // 系统主键
     type: db.IDNO,
     autoIncrement: true,
     primaryKey: true
   },
   user_id: {
+    //用户id
     type: db.ID,
     defaultValue: '',
     allowNull: false
@@ -29,7 +32,7 @@ module.exports = db.defineModel('tbl_integration_orderkujiale', {
     allowNull: false
   },
   appuid: {
-    // username
+    // 酷家乐id
     type: db.STRING(100),
     defaultValue: '',
     allowNull: false

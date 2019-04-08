@@ -240,6 +240,7 @@ export default {
         order_address: _self.$route.query.orderAddress
       })
       _self.userInfo = JSON.parse(JSON.stringify(response.data.info))
+      _self.search_text = _self.$route.query.orderID
       if(_self.$route.query.orderID){
         _self.currentOrder = _self.$route.query.orderID
       }
@@ -311,6 +312,7 @@ export default {
         _self.orders = []
       }
     })
+    _self.searchOrder()
   },
   methods: {
     searchOrder: async function (event) {
