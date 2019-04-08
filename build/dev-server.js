@@ -11,15 +11,15 @@ const compiler = webpack(config)
 let proxyTable
 if (process.env.NODE_ENV === 'test') {
     proxyTable = {
-       '/api': 'http://localhost:9090',
-       '/temp': 'http://localhost:9090',
-       '/files': 'http://localhost:9090'
+       '/api': 'http://localhost:9080',
+       '/temp': 'http://localhost:9080',
+       '/files': 'http://localhost:9080'
    }
 } else {
     proxyTable = {
-       '/api': 'http://localhost:9090',
-       '/temp': 'http://localhost:9090',
-       '/files': 'http://localhost:9090'
+       '/api': 'http://localhost:9080',
+       '/temp': 'http://localhost:9080',
+       '/files': 'http://localhost:9080'
    }
 }
 
