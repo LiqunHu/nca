@@ -4,18 +4,13 @@ const querystring = require('querystring')
 
 const common = require('../../util/CommonUtil')
 const GLBConfig = require('../../util/GLBConfig')
-const Sequence = require('../../util/Sequence')
 const logger = require('../../util/Logger').createLogger('ZoweeInterfaceSRV')
 const model = require('../../model')
 
 const tb_orderkujiale = model.integration_orderkujiale
 const tb_user = model.integration_user
-const tb_order = model.nca_order
-const tb_roomtype = model.nca_roomtype
-const tb_orderroom = model.nca_orderroom
-const tb_materiel = model.nca_materiel
-const tb_ordermateriel = model.nca_ordermateriel
-const tb_operator = model.nca_operator
+const tb_orderroom = model.integration_orderroom
+const tb_ordermateriel = model.integration_ordermateriel
 
 exports.KujialeControlResource = (req, res) => {
   let method = req.query.method
@@ -31,6 +26,10 @@ exports.KujialeControlResource = (req, res) => {
     queryDesignAct(req, res)
   } else if (method === 'changeDesignName') {
     changeDesignNameAct(req, res)
+  } else if (method === 'generateCAD') {
+    generateCADAct(req, res)
+  } else if (method === 'getCAD') {
+    getCADAct(req, res)
   } else {
     common.sendError(res, 'common_01')
   }
@@ -115,10 +114,10 @@ let getIframeSrcAct = async (req, res) => {
       hName = '',
       dsinfo
 
-    if (doc.order_id) {
+    if (doc.design_id) {
       let orderkujiale = await tb_orderkujiale.findOne({
         where: {
-          order_id: doc.order_id
+          design_id: doc.design_id
         }
       })
 
@@ -131,45 +130,26 @@ let getIframeSrcAct = async (req, res) => {
       if (!orderkujiale.desid) {
         appuid = user.appuid
         token = await getAccessToken(user)
-        if (!doc.planId) {
-          let order = await tb_order.findOne({
-            where: {
-              order_id: doc.order_id
-            }
-          })
-
-          let roomtype = await tb_roomtype.findOne({
-            where: {
-              roomtype_id: order.roomtype_id
-            }
-          })
-
-          if (!roomtype) {
-            return common.sendError(res, 'kujiale_02')
-          }
-
-          if (!roomtype.roomtype_kjl_planid) {
-            return common.sendError(res, 'kujiale_04')
-          }
-          planId = roomtype.roomtype_kjl_planid
+        if (orderkujiale.fpid) {
+          planId = orderkujiale.fpid
         } else {
-          planId = doc.planId
-        }
+          if (doc.planId) {
+            let cpop = {
+              method: 'POST',
+              uri:
+                'https://openapi.kujiale.com/v2/floorplan/' +
+                doc.planId +
+                '/copy' +
+                getAuthString(user.appuid, {}),
+              headers: {
+                'content-type': 'text/plain;charset=utf-8'
+              }
+            }
 
-        let cpop = {
-          method: 'POST',
-          uri:
-            'https://openapi.kujiale.com/v2/floorplan/' +
-            planId +
-            '/copy' +
-            getAuthString(user.appuid, {}),
-          headers: {
-            'content-type': 'text/plain;charset=utf-8'
+            let fp = await rp(cpop)
+            planId = JSON.parse(fp).d.planId
           }
         }
-
-        let fp = await rp(cpop)
-        planId = JSON.parse(fp).d.planId
 
         if (!doc.designId) {
           let options = {
@@ -342,12 +322,11 @@ let getNewIframeSrcAct = async (req, res) => {
 let syncAct = async (req, res) => {
   try {
     let doc = common.docTrim(req.body),
-      returnData = {},
       url
 
     let orderkujiale = await tb_orderkujiale.findOne({
       where: {
-        order_id: doc.order_id
+        design_id: doc.design_id
       }
     })
 
@@ -424,29 +403,23 @@ let syncAct = async (req, res) => {
     let detail = await rp(url)
     detail = JSON.parse(detail)
 
-    let order = await tb_order.findOne({
-      where: {
-        order_id: doc.order_id
-      }
-    })
-
     if (detail.d.length > 0) {
       await common.transaction(async function(t) {
-        order.order_house_area = brief.d.floorArea
-        await order.save({
+        orderkujiale.orderkujiale_house_area = brief.d.floorArea
+        await orderkujiale.save({
           transaction: t
         })
 
         await tb_orderroom.destroy({
           where: {
-            order_id: order.order_id
+            orderkujiale_id: orderkujiale.orderkujiale_id
           },
           transaction: t
         })
 
         await tb_ordermateriel.destroy({
           where: {
-            order_id: order.order_id
+            orderkujiale_id: orderkujiale.orderkujiale_id
           },
           transaction: t
         })
@@ -487,23 +460,22 @@ let syncAct = async (req, res) => {
         // let customWardrobeDetail = await rp(url)
         // customWardrobeDetail = JSON.parse(customWardrobeDetail)
 
-        function searchRoomType(room_name) {
-          for (let rt of GLBConfig.ROOMTYPE) {
-            if (room_name === '起居室') {
-              return '2'
-            }
-            if (room_name.search(rt.text) >= 0) {
-              return rt.id
-            }
-          }
-          return '20'
-        }
+        // function searchRoomType(room_name) {
+        //   for (let rt of GLBConfig.ROOMTYPE) {
+        //     if (room_name === '起居室') {
+        //       return '2'
+        //     }
+        //     if (room_name.search(rt.text) >= 0) {
+        //       return rt.id
+        //     }
+        //   }
+        //   return '20'
+        // }
 
         for (let r of detail.d) {
           let room = await tb_orderroom.create(
             {
-              order_id: order.order_id,
-              room_type: searchRoomType(r.typeName),
+              orderkujiale_id: orderkujiale.orderkujiale_id,
               room_name: r.typeName,
               room_area: r.groundArea,
               wall_area: r.wall_area,
@@ -520,38 +492,26 @@ let syncAct = async (req, res) => {
             if (ho.roomId === r.roomId) {
               for (let m of ho.hardOutfits) {
                 if (m.code) {
-                  let mt = await tb_materiel.findOne({
-                    where: {
-                      materiel_code: m.code
+                  await tb_ordermateriel.create(
+                    {
+                      room_id: room.room_id,
+                      orderkujiale_id: orderkujiale.orderkujiale_id,
+                      materiel_amount: Math.ceil(m.number),
+                      kjl_type: m.type,
+                      kjl_imageurl: m.imageUrl,
+                      kjl_name: m.name,
+                      kjl_brand: m.brand,
+                      kjl_specification: m.specification,
+                      kjl_unit: m.unit,
+                      kjl_number: m.number,
+                      kjl_unitprice: m.unitPrice,
+                      kjl_realprice: m.realPrice,
+                      kjl_group: '硬装'
+                    },
+                    {
+                      transaction: t
                     }
-                  })
-                  if (mt) {
-                    await tb_ordermateriel.create(
-                      {
-                        room_id: room.room_id,
-                        order_id: order.order_id,
-                        materiel_id: mt.materiel_id,
-                        materiel_amount: Math.ceil(m.number),
-                        room_type: room.room_type,
-                        kjl_type: m.type,
-                        kjl_imageurl: m.imageUrl,
-                        kjl_name: m.name,
-                        kjl_brand: m.brand,
-                        kjl_specification: m.specification,
-                        kjl_unit: m.unit,
-                        kjl_number: m.number,
-                        kjl_unitprice: m.unitPrice,
-                        kjl_realprice: m.realPrice,
-                        kjl_group: '硬装'
-                      },
-                      {
-                        transaction: t
-                      }
-                    )
-                  } else {
-                    logger.error(m.code + ' do not exists.')
-                    throw new Error(m.code + ' do not exists.')
-                  }
+                  )
                 }
               }
             }
@@ -562,37 +522,26 @@ let syncAct = async (req, res) => {
             if (so.roomId === r.roomId) {
               for (let m of so.softOutfits) {
                 if (m.code) {
-                  let mt = await tb_materiel.findOne({
-                    where: {
-                      materiel_code: m.code
+                  await tb_ordermateriel.create(
+                    {
+                      room_id: room.room_id,
+                      orderkujiale_id: orderkujiale.orderkujiale_id,
+                      materiel_amount: Math.ceil(m.number),
+                      kjl_type: m.type,
+                      kjl_imageurl: m.imageUrl,
+                      kjl_name: m.name,
+                      kjl_brand: m.brand,
+                      kjl_specification: m.specification,
+                      kjl_unit: m.unit,
+                      kjl_number: m.number,
+                      kjl_unitprice: m.unitPrice,
+                      kjl_realprice: m.realPrice,
+                      kjl_group: '硬装'
+                    },
+                    {
+                      transaction: t
                     }
-                  })
-                  if (mt) {
-                    await tb_ordermateriel.create(
-                      {
-                        room_id: room.room_id,
-                        order_id: order.order_id,
-                        materiel_id: mt.materiel_id,
-                        materiel_amount: Math.ceil(m.number),
-                        room_type: room.room_type,
-                        kjl_type: m.type,
-                        kjl_imageurl: m.imageUrl,
-                        kjl_name: m.name,
-                        kjl_brand: m.brand,
-                        kjl_unit: m.unit,
-                        kjl_number: m.number,
-                        kjl_unitprice: m.unitPrice,
-                        kjl_realprice: m.realPrice,
-                        kjl_group: '软装'
-                      },
-                      {
-                        transaction: t
-                      }
-                    )
-                  } else {
-                    logger.error(m.code + ' do not exists.')
-                    throw new Error(m.code + ' do not exists.')
-                  }
+                  )
                 }
               }
             }
@@ -653,8 +602,7 @@ let queryStandardAct = async (req, res) => {
 
 let queryDesignAct = async (req, res) => {
   try {
-    let doc = common.docTrim(req.body),
-      user = req.user
+    let doc = common.docTrim(req.body)
     let returnData = {
       results: []
     }
@@ -663,7 +611,7 @@ let queryDesignAct = async (req, res) => {
       start: 0,
       num: 50,
       status: 1,
-      appuid: user.username
+      appuid: doc.appuid
     }
 
     if (doc.search_text) {
@@ -675,7 +623,7 @@ let queryDesignAct = async (req, res) => {
     while (hasMore) {
       url =
         'https://openapi.kujiale.com/v2/design/list' +
-        getAuthString(user.username, queryPara)
+        getAuthString(doc.appuid, queryPara)
       let designs = await rp(url)
       designs = JSON.parse(designs)
       hasMore = designs.d.hasMore
@@ -693,8 +641,7 @@ let queryDesignAct = async (req, res) => {
 
 let changeDesignNameAct = async (req, res) => {
   try {
-    let doc = common.docTrim(req.body),
-      user = req.user
+    let doc = common.docTrim(req.body)
 
     let options = {
       method: 'POST',
@@ -714,6 +661,55 @@ let changeDesignNameAct = async (req, res) => {
     let body = await rp(options)
 
     common.sendData(res)
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
+let generateCADAct = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+
+    let options = {
+      method: 'POST',
+      uri:
+        'https://openapi.kujiale.com/v2/design/' +
+        doc.desid +
+        '/cd' +
+        getAuthString('', {}),
+      json: true,
+      headers: {
+        'content-type': 'application/json;charset=utf-8'
+      },
+      body: [20]
+    }
+    let body = await rp(options)
+    if (body.c === '0') {
+      return common.sendData(res)
+    } else {
+      return common.sendError(res, 'kujiale_11')
+    }
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
+let getCADAct = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+
+    let url =
+      'https://openapi.kujiale.com/v2/design/' +
+      doc.desid +
+      '/cd' +
+      getAuthString('', {})
+    let body = await rp(url)
+    let standard = JSON.parse(body)
+    if (standard.c === '0') {
+      return common.sendData(res, {url: standard.d.constructionUrl})
+    } else {
+      return common.sendError(res, 'kujiale_11')
+    }
   } catch (error) {
     return common.sendFault(res, error)
   }
@@ -850,46 +846,3 @@ async function getEmailAccessToken(userId, username) {
     throw error
   }
 }
-
-async function getEmail(username, kujialeEmail, userId) {
-  try {
-    let token = await getEmailAccessToken(userId, username)
-    let emails = {
-      method: 'POST',
-      uri: 'https://openapi.kujiale.com/v2/user/bind' + getAuthString(username),
-      json: true,
-      headers: {
-        'content-type': 'application/json'
-      },
-      body: {
-        email: kujialeEmail
-      }
-    }
-    let body = await rp(emails)
-    if (body.c != '0') {
-      return body.m
-    } else {
-      let operator = await tb_operator.findOne({
-        where: {
-          user_id: userId,
-          kujiale_appuid: kujialeEmail,
-          state: 1
-        }
-      })
-      if (operator) {
-        operator.kujiale_appuid = kujialeEmail
-        await operator.save()
-      } else {
-        operator = await tb_operator.create({
-          user_id: userId,
-          kujiale_appuid: kujialeEmail
-        })
-      }
-      return operator
-    }
-  } catch (error) {
-    throw error
-  }
-}
-
-exports.getEmail = getEmail

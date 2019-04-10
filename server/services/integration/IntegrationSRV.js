@@ -13,8 +13,10 @@ exports.IntegrationResource = (req, res) => {
     access(req, res)
   } else if (method === 'search_order') {
     search_order(req, res)
-  } else if (method === 'search_design') {
-    getDesign(req, res)
+  } else if (method === 'update_fpid') {
+    updateFpid(req, res)
+  } else if (method === 'update_desid') {
+    updateDesid(req, res)
   } else {
     common.sendError(res, 'common_01')
   }
@@ -34,6 +36,7 @@ let access = async (req, res) => {
       if (user) {
         user.phone = doc.phone
         user.name = doc.name
+        user.appuid = doc.appuid
         await user.save()
       } else {
         user = await tb_user.create({
@@ -43,18 +46,20 @@ let access = async (req, res) => {
           appuid: doc.appuid
         })
       }
-      if (doc.order_id) {
+      if (doc.design_id) {
         let order = await tb_orderkujiale.findOne({
           where: {
-            order_id: doc.order_id
+            design_id: doc.design_id
           }
         })
         if (!order) {
           await tb_orderkujiale.create({
             user_id: user.user_id,
-            order_id: doc.order_id,
-            order_name: doc.order_name,
-            order_address: doc.order_address,
+            houses_id: doc.houses_id,
+            houses_name: doc.houses_name,
+            design_id: doc.design_id,
+            design_name: doc.design_name,
+            design_address: doc.design_address,
             appuid: user.appuid
           })
         }
@@ -79,7 +84,7 @@ let search_order = async (req, res) => {
       `select * from tbl_integration_orderkujiale a, tbl_integration_user b where a.appuid = b.appuid `
     if (doc.search_text) {
       queryStr +=
-        ' and (a.order_id like ? or a.order_address like ? or b.phone like ? or b.name like ?)'
+        ' and (a.houses_id like ? or a.design_id like ? or b.phone like ? or b.name like ?)'
       replacements.push('%' + doc.search_text + '%')
       replacements.push('%' + doc.search_text + '%')
       replacements.push('%' + doc.search_text + '%')
@@ -101,14 +106,32 @@ let search_order = async (req, res) => {
   }
 }
 
-let getDesign = async (req, res) => {
+let updateFpid = async (req, res) => {
   try {
     let doc = common.docTrim(req.body)
     let design = await tb_orderkujiale.findOne({
       where: {
-        desid: doc.design_id
+        design_id: doc.design_id
       }
     })
+    design.fpid = doc.fpid
+    await design.save()
+    common.sendData(res, design)
+  } catch (error) {
+    throw error
+  }
+}
+
+let updateDesid = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+    let design = await tb_orderkujiale.findOne({
+      where: {
+        design_id: doc.design_id
+      }
+    })
+    design.desid = doc.desid
+    await design.save()
     common.sendData(res, design)
   } catch (error) {
     throw error

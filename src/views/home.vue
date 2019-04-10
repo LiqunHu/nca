@@ -19,9 +19,14 @@
                     <ul class="result-list">
                         <template v-for="order in orders">
                         <li>
-                            <div class="result-price" style="float: right; height:200px; padding-top: 50px;">
+                            <div style="width: 240px; border-left: 1px dashed #ddd; float: right; height: 200px; display: flex; justify-content:center; align-items:Center;">
                                 <!-- $92,101 <small>PER MONTH</small> -->
-                                <a class="btn btn-info btn-block" @click="getDegsin(order)">去装修</a>
+                                <div style="width: 240px;">
+                                  <a class="btn btn-info btn-block" @click="getDegsin(order)">去装修</a>
+                                  <a v-if="order.desid" class="btn btn-primary btn-block" @click="bomSync(order)">物料同步</a>
+                                  <a v-if="order.desid" class="btn btn-success btn-block" @click="generateCAD(order)">生成CAD</a>
+                                  <a v-if="order.desid" class="btn btn-inverse btn-block" @click="getCAD(order)">获取CAD</a>
+                                </div>
                             </div>
                             <div style="width: 200px; height: 200px; padding: 0px;background: #2d353c;vertical-align: middle;">
                               <div class="result-image" style="width: auto">
@@ -29,8 +34,8 @@
                               </div>
                             </div>
                             <div class="result-info">
-                                <h4 class="title"><a href="javascript:;">订单: {{order.order_id}} | 客户: {{order.name}} | {{order.phone}}</a></h4>
-                                <p class="location">{{order.order_address}}</p>
+                                <h4 class="title"><a href="javascript:;">设计: {{order.design_id}} | 客户: {{order.name}} | {{order.phone}}</a></h4>
+                                <p class="location">{{order.design_name}}</p>
                                 <p class="desc">
                                     {{order.kujiale_commName}} {{order.kujiale_specName}}
                                 </p>
@@ -45,11 +50,11 @@
                         </li>
                         </template>
                     </ul>
-                    <div class="clearfix">
+                    <!-- <div class="clearfix">
                         <p class="pagination pagination-without-border" style="width:300px">
-                            <a href="javascript:;" class="btn btn-primary btn-block" @click="newDesign()"><i class="fa fa-edit pull-right"></i> 新设计</a>
+                            <a href="javascript:;" class="btn btn-primary btn-block" @click="getNewIframeSrc()"><i class="fa fa-edit pull-right"></i> 新设计</a>
                         </p>
-                    </div>
+                    </div> -->
                 </div>
             </div>
             <!-- end col-12 -->
@@ -212,7 +217,8 @@ export default {
   data: function () {
     return {
       userInfo: '',
-      currentOrder: '',
+      currentHouses: '',
+      currentDesign: '',
       search_text: '',
       orders: [],
       standards: [],
@@ -230,19 +236,42 @@ export default {
   mounted: async function () {
     let _self = this
     if(_self.$route.query.userId){
-      let response = await _self.$http.post(apiUrl + 'access',{
-        user_id: _self.$route.query.userId,
-        name: _self.$route.query.name,
-        phone: _self.$route.query.phone,
-        appuid: _self.$route.query.appuid,
-        order_id: _self.$route.query.orderID,
-        order_name: _self.$route.query.orderName,
-        order_address: _self.$route.query.orderAddress
-      })
-      _self.userInfo = JSON.parse(JSON.stringify(response.data.info))
-      _self.search_text = _self.$route.query.orderID
-      if(_self.$route.query.orderID){
-        _self.currentOrder = _self.$route.query.orderID
+      if(!_self.$route.query.housesId) {
+        return common.dealWarningCommon('未传入楼盘信息')
+      }
+      if(!_self.$route.query.appuid) {
+        return common.dealWarningCommon('未传酷家乐关联账户')
+      }
+      if(_self.$route.query.designId) {
+        let response = await _self.$http.post(apiUrl + 'access',{
+          user_id: _self.$route.query.userId,
+          name: _self.$route.query.name,
+          phone: _self.$route.query.phone,
+          appuid: _self.$route.query.appuid,
+          houses_id: _self.$route.query.housesId,
+          houses_name: _self.$route.query.housesName,
+          design_id: _self.$route.query.designId,
+          design_name: _self.$route.query.designName
+        })
+        _self.userInfo = JSON.parse(JSON.stringify(response.data.info))
+      } else {
+        let response = await _self.$http.post(apiUrl + 'access',{
+          user_id: _self.$route.query.userId,
+          name: _self.$route.query.name,
+          phone: _self.$route.query.phone,
+          appuid: _self.$route.query.appuid
+        })
+        _self.userInfo = JSON.parse(JSON.stringify(response.data.info))
+      }
+
+      if(_self.$route.query.housesId){
+        _self.currentHouses = _self.$route.query.housesId
+        _self.search_text = _self.$route.query.housesId
+      }
+      
+      if(_self.$route.query.designId){
+        _self.currentDesign = _self.$route.query.designId
+        _self.search_text = _self.$route.query.designId
       }
     } else {
       return common.dealWarningCommon('用户未登陆')
@@ -344,7 +373,7 @@ export default {
         queryPara.designId = _self.currDesign.designId
       }
       if (_self.currOrder) {
-        queryPara.order_id = _self.currOrder.order_id
+        queryPara.design_id = _self.currOrder.design_id
       }
       let response = await _self.$http.post('/api/openapi/kujiale?method=getIframeSrc', queryPara)
       let body = response.data.info;
@@ -393,13 +422,33 @@ export default {
       let body = response.data.info;
       if (window.postMessage) {
         let callback = async function (ev) {
-          // console ? console.log(ev) : alert(ev.data);
+          console ? console.log(ev) : alert(ev.data);
           if (typeof (ev.data) != "object") {
             if (ev.origin === 'http://www.kujiale.com' ||
               ev.origin === 'http://yun.kujiale.com' ||
               ev.origin === 'https://www.kujiale.com' ||
               ev.origin === 'https://yun.kujiale.com') {
               let data = JSON.parse(ev.data)
+
+              if (data.type === 'fp' && (data.action === 'kjl_saved' || data.action === 'kjl_loaded' || data.action === 'kjl_auto_saved’')) {
+                if(!_self.currDesign.planId && data.fpId) {
+                  _self.$http.post(apiUrl + 'update_fpid', {
+                    design_id: _self.currOrder.design_id,
+                    fpid: data.fpId
+                  })
+                }
+                _self.currDesign.planId = data.fpId
+              }
+
+              if (data.type === 'des' && (data.action === 'kjl_saved' || data.action === 'kjl_loaded')) {
+                if(!_self.currDesign.designId && data.desid) {
+                  _self.$http.post(apiUrl + 'update_desid', {
+                    design_id: _self.currOrder.design_id,
+                    desid: data.desid
+                  })
+                }
+                _self.currDesign.designId = data.desid
+              }
 
               if ((data.type === 'fp' || data.type === 'des') && data.action === 'kjl_completed') {
                 $('#kujialeiframe').attr('src', '');
@@ -434,6 +483,7 @@ export default {
       try {
         _self.currOrder = JSON.parse(JSON.stringify(order))
         
+        _self.currDesign.planId = _self.currOrder.fpid
         _self.currDesign.designId = _self.currOrder.desid
         if (order.desid) {
           _self.getIframeSrc('1')
@@ -519,7 +569,8 @@ export default {
       let _self = this
       try {
         let params = {
-          search_text: _self.searchDesign
+          search_text: _self.searchDesign,
+          appuid: _self.userInfo.appuid
         }
         let response = await _self.$http.post('/api/openapi/kujiale?method=queryDesign', params)
         let retData = response.data.info
@@ -537,16 +588,37 @@ export default {
         common.dealErrorCommon(_self, error);
       }
     },
-    newDesign: async function () {
+    bomSync: async function (order) {
       let _self = this
-      _self.currOrder = ''
-      $('.experience-show').hide()
-      $('#selectModal').modal('show')
-      if ($('#province').val() || $('#city').val() || $('#estate_select').select2('data')) {
-        $('#province').val(null).trigger('change')
-        $('#city').val(null).trigger('change')
-        $('#estate_select').empty();
-        _self.standards = []
+      try {
+        let response = await _self.$http.post('/api/openapi/kujiale?method=sync', {
+          design_id: order.design_id
+        })
+        common.dealSuccessCommon('物料同步成功')
+      } catch (error) {
+        common.dealErrorCommon(_self, error);
+      }
+    },
+    generateCAD: async function (order) {
+      let _self = this
+      try {
+        let response = await _self.$http.post('/api/openapi/kujiale?method=generateCAD', {
+          desid: order.desid
+        })
+        common.dealSuccessCommon('生成CAD成功')
+      } catch (error) {
+        common.dealErrorCommon(_self, error);
+      }
+    },
+    getCAD: async function (order) {
+      let _self = this
+      try {
+        let response = await _self.$http.post('/api/openapi/kujiale?method=getCAD', {
+          desid: order.desid
+        })
+        window.open(response.data.info.url)
+      } catch (error) {
+        common.dealErrorCommon(_self, error);
       }
     }
   }

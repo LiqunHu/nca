@@ -13,5 +13,7 @@ module.exports = {
     kujiale_08: '该邮箱在酷家乐不存在',
     kujiale_09: '该邮箱已与酷家乐其他用户绑定',
     kujiale_10: '该邮箱绑定产生了错误',
+    kujiale_11: '生成CAD失败',
+    kujiale_11: '获取CAD失败',
     integration_01: '为传递用户信息'
 };

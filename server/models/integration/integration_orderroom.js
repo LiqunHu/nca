@@ -5,19 +5,15 @@
 const db = require('../../util/db');
 const GLBConfig = require('../../util/GLBConfig');
 
-module.exports = db.defineModel('tbl_nca_orderroom', {
+module.exports = db.defineModel('tbl_integration_orderroom', {
     room_id: {
         type: db.IDNO,
         autoIncrement: true,
         primaryKey: true
     },
-    order_id: {
-        type: db.ID,
+    orderkujiale_id: {
+        type: db.IDNO,
         allowNull: false
-    },
-    room_type: { //空间类型
-        type: db.STRING(20),
-        allowNull: true
     },
     room_name: { //空间
         type: db.STRING(50),

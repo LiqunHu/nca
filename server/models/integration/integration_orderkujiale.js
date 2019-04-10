@@ -15,21 +15,25 @@ module.exports = db.defineModel('tbl_integration_orderkujiale', {
     defaultValue: '',
     allowNull: false
   },
-  order_id: {
-    //订单号
+  houses_id: {
+    //楼盘id
     type: db.ID,
     allowNull: false
   },
-  order_name: {
-    //订单名称
+  houses_name: {
+    //楼盘名称
     type: db.STRING(100),
     allowNull: true
   },
-  order_address: {
-    // 地址
-    type: db.STRING(50),
-    defaultValue: '',
+  design_id: {
+    // 设计编号
+    type: db.ID,
     allowNull: false
+  },
+  design_name: {
+    // 设计名称
+    type: db.STRING(100),
+    allowNull: true
   },
   appuid: {
     // 酷家乐id
@@ -95,6 +99,12 @@ module.exports = db.defineModel('tbl_integration_orderkujiale', {
     // 户型
     type: db.STRING(100),
     defaultValue: '',
+    allowNull: false
+  },
+  orderkujiale_house_area: {
+    //面积
+    type: db.DOUBLE,
+    defaultValue: 0,
     allowNull: false
   }
 })

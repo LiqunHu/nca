@@ -2,7 +2,7 @@ const config = {
   // for sequelize`
   sequelize: {
     dialect: 'mysql',
-    database: 'ncadata',
+    database: 'integration',
     username: 'root',
     password: '123456',
     host: 'localhost',
