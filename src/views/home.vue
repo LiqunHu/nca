@@ -23,9 +23,8 @@
                                 <!-- $92,101 <small>PER MONTH</small> -->
                                 <div style="width: 240px;">
                                   <a class="btn btn-info btn-block" @click="getDegsin(order)">去装修</a>
-                                  <a v-if="order.desid" class="btn btn-primary btn-block" @click="bomSync(order)">物料同步</a>
-                                  <a v-if="order.desid" class="btn btn-success btn-block" @click="generateCAD(order)">生成CAD</a>
-                                  <a v-if="order.desid" class="btn btn-inverse btn-block" @click="getCAD(order)">获取CAD</a>
+                                  <a v-if="order.desid" class="btn btn-primary btn-block" @click="generateKJL(order)">生成数据</a>
+                                  <a v-if="order.desid" class="btn btn-success btn-block" @click="kjlSync(order)">同步数据</a>
                                 </div>
                             </div>
                             <div style="width: 200px; height: 200px; padding: 0px;background: #2d353c;vertical-align: middle;">
@@ -588,35 +587,23 @@ export default {
         common.dealErrorCommon(_self, error);
       }
     },
-    bomSync: async function (order) {
+    generateKJL: async function (order) {
       let _self = this
       try {
-        let response = await _self.$http.post('/api/openapi/kujiale?method=sync', {
+        let response = await _self.$http.post('/api/openapi/kujiale?method=generateKJL', {
           design_id: order.design_id
         })
-        common.dealSuccessCommon('物料同步成功')
+        common.dealSuccessCommon('生成数据成功, 请60秒后进行数据同步')
       } catch (error) {
         common.dealErrorCommon(_self, error);
       }
     },
-    generateCAD: async function (order) {
+    kjlSync: async function (order) {
       let _self = this
       try {
-        let response = await _self.$http.post('/api/openapi/kujiale?method=generateCAD', {
-          desid: order.desid
+        let response = await _self.$http.post('/api/openapi/kujiale?method=kjlSync', {
+          design_id: order.design_id
         })
-        common.dealSuccessCommon('生成CAD成功')
-      } catch (error) {
-        common.dealErrorCommon(_self, error);
-      }
-    },
-    getCAD: async function (order) {
-      let _self = this
-      try {
-        let response = await _self.$http.post('/api/openapi/kujiale?method=getCAD', {
-          desid: order.desid
-        })
-        window.open(response.data.info.url)
       } catch (error) {
         common.dealErrorCommon(_self, error);
       }

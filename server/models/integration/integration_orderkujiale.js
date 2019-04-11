@@ -102,9 +102,19 @@ module.exports = db.defineModel('tbl_integration_orderkujiale', {
     allowNull: false
   },
   orderkujiale_house_area: {
-    //面积
+    // 面积
     type: db.DOUBLE,
     defaultValue: 0,
     allowNull: false
+  },
+  orderkujiale_cad_url: {
+    // cad链接
+    type: db.STRING(200),
+    allowNull: true
+  },
+  orderkujiale_renderpic_url: {
+    // 渲染图链接
+    type: db.STRING(200),
+    allowNull: true
   }
 })

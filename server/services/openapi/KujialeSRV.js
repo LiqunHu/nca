@@ -11,6 +11,7 @@ const tb_orderkujiale = model.integration_orderkujiale
 const tb_user = model.integration_user
 const tb_orderroom = model.integration_orderroom
 const tb_ordermateriel = model.integration_ordermateriel
+const tb_renderpic = model.integration_orderkujiale_renderpic
 
 exports.KujialeControlResource = (req, res) => {
   let method = req.query.method
@@ -18,18 +19,16 @@ exports.KujialeControlResource = (req, res) => {
     getIframeSrcAct(req, res)
   } else if (method === 'getNewIframeSrc') {
     getNewIframeSrcAct(req, res)
-  } else if (method === 'sync') {
-    syncAct(req, res)
   } else if (method === 'queryStandard') {
     queryStandardAct(req, res)
   } else if (method === 'queryDesign') {
     queryDesignAct(req, res)
   } else if (method === 'changeDesignName') {
     changeDesignNameAct(req, res)
-  } else if (method === 'generateCAD') {
-    generateCADAct(req, res)
-  } else if (method === 'getCAD') {
-    getCADAct(req, res)
+  } else if (method === 'generateKJL') {
+    generateKJLAct(req, res)
+  } else if (method === 'kjlSync') {
+    kjlSyncAct(req, res)
   } else {
     common.sendError(res, 'common_01')
   }
@@ -319,7 +318,117 @@ let getNewIframeSrcAct = async (req, res) => {
   }
 }
 
-let syncAct = async (req, res) => {
+let queryStandardAct = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+    let returnData = {
+      results: []
+    }
+    if (doc.search_text && doc.province) {
+      let city_id = common.searchKujialeCityid(doc.province, doc.city)
+      let queryPara = {
+        start: 0,
+        num: 50,
+        q: doc.search_text,
+        city_id: city_id
+      }
+      if (doc.count) {
+        queryPara.room_count = parseInt(doc.count)
+      }
+      if (doc.min) {
+        queryPara.area_min = parseInt(doc.min)
+      }
+      if (doc.max) {
+        queryPara.area_max = parseInt(doc.max)
+      }
+      let hasMore = true
+      let url = ''
+      while (hasMore) {
+        url =
+          'https://openapi.kujiale.com/v2/floorplan/standard' +
+          getAuthString('', queryPara)
+        let standard = await rp(url)
+        standard = JSON.parse(standard)
+        hasMore = standard.d.hasMore
+        for (let h of standard.d.result) {
+          returnData.results.push(h)
+        }
+        queryPara.start += queryPara.num
+      }
+    }
+    common.sendData(res, returnData)
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
+let queryDesignAct = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+    let returnData = {
+      results: []
+    }
+
+    let queryPara = {
+      start: 0,
+      num: 50,
+      status: 1,
+      appuid: doc.appuid
+    }
+
+    if (doc.search_text) {
+      queryPara.keyword = doc.search_text
+    }
+
+    let hasMore = true
+    let url = ''
+    while (hasMore) {
+      url =
+        'https://openapi.kujiale.com/v2/design/list' +
+        getAuthString(doc.appuid, queryPara)
+      let designs = await rp(url)
+      designs = JSON.parse(designs)
+      hasMore = designs.d.hasMore
+      for (let d of designs.d.result) {
+        returnData.results.push(d)
+      }
+      queryPara.start += queryPara.num
+    }
+
+    common.sendData(res, returnData)
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
+let changeDesignNameAct = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+
+    let options = {
+      method: 'POST',
+      uri:
+        'https://openapi.kujiale.com/v2/design/' +
+        doc.designId +
+        '/basic' +
+        getAuthString('', {}),
+      json: true,
+      headers: {
+        'content-type': 'application/json;charset=utf-8'
+      },
+      body: {
+        name: doc.name
+      }
+    }
+    let body = await rp(options)
+
+    common.sendData(res)
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
+let generateKJLAct = async (req, res) => {
   try {
     let doc = common.docTrim(req.body),
       url
@@ -330,6 +439,7 @@ let syncAct = async (req, res) => {
       }
     })
 
+    // 产生物料清单
     if (!orderkujiale.listingid) {
       url =
         'https://openapi.kujiale.com/v2/listing/init' +
@@ -342,27 +452,59 @@ let syncAct = async (req, res) => {
       await orderkujiale.save()
     }
 
-    if (orderkujiale.sync_state === '0') {
-      let options = {
-        method: 'POST',
-        uri:
-          'https://openapi.kujiale.com/v2/listing/' +
-          orderkujiale.listingid +
-          '/sync' +
-          getAuthString('', {
-            appuid: orderkujiale.appuid
-          }),
-        headers: {
-          'content-type': 'text/plain;charset=utf-8'
-        }
-      }
-      let sync = await rp(options)
-      sync = JSON.parse(sync)
-      if (sync.c === '0') {
-        orderkujiale.sync_state = '1'
-        await orderkujiale.save()
+    let options = {
+      method: 'POST',
+      uri:
+        'https://openapi.kujiale.com/v2/listing/' +
+        orderkujiale.listingid +
+        '/sync' +
+        getAuthString('', {
+          appuid: orderkujiale.appuid
+        }),
+      headers: {
+        'content-type': 'text/plain;charset=utf-8'
       }
     }
+    let sync = await rp(options)
+    sync = JSON.parse(sync)
+    if (sync.c !== '0') {
+      return common.sendError(res, 'kujiale_11')
+    }
+
+    // 生成 CAD
+    options = {
+      method: 'POST',
+      uri:
+        'https://openapi.kujiale.com/v2/design/' +
+        orderkujiale.desid +
+        '/cd' +
+        getAuthString('', {}),
+      json: true,
+      headers: {
+        'content-type': 'application/json;charset=utf-8'
+      },
+      body: [20]
+    }
+    let body = await rp(options)
+    if (body.c !== '0') {
+      return common.sendError(res, 'kujiale_11')
+    }
+    return common.sendData(res)
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
+let kjlSyncAct = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body),
+      url
+
+    let orderkujiale = await tb_orderkujiale.findOne({
+      where: {
+        design_id: doc.design_id
+      }
+    })
 
     url =
       'https://openapi.kujiale.com/v2/listing/' +
@@ -377,9 +519,6 @@ let syncAct = async (req, res) => {
     if (state.d != '3') {
       return common.sendError(res, 'kujiale_01')
     }
-
-    orderkujiale.sync_state = '0'
-    await orderkujiale.save()
 
     //获取总览
     url =
@@ -550,166 +689,86 @@ let syncAct = async (req, res) => {
       })
     }
 
-    common.sendData(res)
-  } catch (error) {
-    return common.sendError(res, '', error.message)
-  }
-}
-
-let queryStandardAct = async (req, res) => {
-  try {
-    let doc = common.docTrim(req.body)
-    let returnData = {
-      results: []
-    }
-    if (doc.search_text && doc.province) {
-      let city_id = common.searchKujialeCityid(doc.province, doc.city)
-      let queryPara = {
-        start: 0,
-        num: 50,
-        q: doc.search_text,
-        city_id: city_id
-      }
-      if (doc.count) {
-        queryPara.room_count = parseInt(doc.count)
-      }
-      if (doc.min) {
-        queryPara.area_min = parseInt(doc.min)
-      }
-      if (doc.max) {
-        queryPara.area_max = parseInt(doc.max)
-      }
-      let hasMore = true
-      let url = ''
-      while (hasMore) {
-        url =
-          'https://openapi.kujiale.com/v2/floorplan/standard' +
-          getAuthString('', queryPara)
-        let standard = await rp(url)
-        standard = JSON.parse(standard)
-        hasMore = standard.d.hasMore
-        for (let h of standard.d.result) {
-          returnData.results.push(h)
-        }
-        queryPara.start += queryPara.num
-      }
-    }
-    common.sendData(res, returnData)
-  } catch (error) {
-    return common.sendFault(res, error)
-  }
-}
-
-let queryDesignAct = async (req, res) => {
-  try {
-    let doc = common.docTrim(req.body)
-    let returnData = {
-      results: []
-    }
-
-    let queryPara = {
-      start: 0,
-      num: 50,
-      status: 1,
-      appuid: doc.appuid
-    }
-
-    if (doc.search_text) {
-      queryPara.keyword = doc.search_text
-    }
-
-    let hasMore = true
-    let url = ''
-    while (hasMore) {
-      url =
-        'https://openapi.kujiale.com/v2/design/list' +
-        getAuthString(doc.appuid, queryPara)
-      let designs = await rp(url)
-      designs = JSON.parse(designs)
-      hasMore = designs.d.hasMore
-      for (let d of designs.d.result) {
-        returnData.results.push(d)
-      }
-      queryPara.start += queryPara.num
-    }
-
-    common.sendData(res, returnData)
-  } catch (error) {
-    return common.sendFault(res, error)
-  }
-}
-
-let changeDesignNameAct = async (req, res) => {
-  try {
-    let doc = common.docTrim(req.body)
-
-    let options = {
-      method: 'POST',
-      uri:
-        'https://openapi.kujiale.com/v2/design/' +
-        doc.designId +
-        '/basic' +
-        getAuthString('', {}),
-      json: true,
-      headers: {
-        'content-type': 'application/json;charset=utf-8'
-      },
-      body: {
-        name: doc.name
-      }
-    }
-    let body = await rp(options)
-
-    common.sendData(res)
-  } catch (error) {
-    return common.sendFault(res, error)
-  }
-}
-
-let generateCADAct = async (req, res) => {
-  try {
-    let doc = common.docTrim(req.body)
-
-    let options = {
-      method: 'POST',
-      uri:
-        'https://openapi.kujiale.com/v2/design/' +
-        doc.desid +
-        '/cd' +
-        getAuthString('', {}),
-      json: true,
-      headers: {
-        'content-type': 'application/json;charset=utf-8'
-      },
-      body: [20]
-    }
-    let body = await rp(options)
-    if (body.c === '0') {
-      return common.sendData(res)
-    } else {
-      return common.sendError(res, 'kujiale_11')
-    }
-  } catch (error) {
-    return common.sendFault(res, error)
-  }
-}
-
-let getCADAct = async (req, res) => {
-  try {
-    let doc = common.docTrim(req.body)
-
-    let url =
+    // 获取CAD图
+    url =
       'https://openapi.kujiale.com/v2/design/' +
-      doc.desid +
+      orderkujiale.desid +
       '/cd' +
       getAuthString('', {})
     let body = await rp(url)
     let standard = JSON.parse(body)
-    if (standard.c === '0') {
-      return common.sendData(res, {url: standard.d.constructionUrl})
-    } else {
+    if (standard.c !== '0') {
       return common.sendError(res, 'kujiale_11')
     }
+    orderkujiale.orderkujiale_cad_url = standard.d.constructionUrl
+    await orderkujiale.save()
+
+    // 渲染图 漫游图
+    let result = [],
+      start = 0,
+      page = 50,
+      hasMore = true
+
+    while (hasMore) {
+      url =
+        'https://openapi.kujiale.com/v2/renderpic/list' +
+        getAuthString('', {
+          design_id: orderkujiale.desid,
+          start: start,
+          num: page
+        })
+      let standard = await rp(url)
+      standard = JSON.parse(standard)
+      hasMore = standard.d.hasMore
+      for (let h of standard.d.result) {
+        result.push(h)
+      }
+      start += page
+    }
+
+    await tb_renderpic.destroy({
+      where: {
+        orderkujiale_id: orderkujiale.orderkujiale_id
+      }
+    })
+    for(let r of result) {
+      await tb_renderpic.create({
+        orderkujiale_id: orderkujiale.orderkujiale_id,
+        pic_id: r.picId,
+        pic_type: r.picType,
+        pic_detail_type: r.picDetailType,
+        room_name: r.roomName,
+        img: r.img,
+        pano_link: r.panoLink,
+        level: r.level
+      })
+    }
+
+    let rendpics = []
+    for (let r of result){
+      if(r.picType === 0){
+        rendpics.push(r.picId)
+      }
+    }
+
+    let options = {
+      method: 'POST',
+      uri: 'https://openapi.kujiale.com/v2/renderpic/pano' + getAuthString('', {}),
+      json: true,
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: {
+        picIds: rendpics,
+        override: false
+      }
+    }
+
+    let rpic = await rp(options)
+    orderkujiale.orderkujiale_renderpic_url = rpic.d
+    await orderkujiale.save()
+
+    return common.sendData(res)
   } catch (error) {
     return common.sendFault(res, error)
   }
