@@ -49,11 +49,11 @@
                         </li>
                         </template>
                     </ul>
-                    <!-- <div class="clearfix">
+                    <div class="clearfix">
                         <p class="pagination pagination-without-border" style="width:300px">
-                            <a href="javascript:;" class="btn btn-primary btn-block" @click="getNewIframeSrc()"><i class="fa fa-edit pull-right"></i> 新设计</a>
+                            <a href="javascript:;" class="btn btn-primary btn-block" @click="newDegsinDialog()"><i class="fa fa-edit pull-right"></i> 新设计</a>
                         </p>
-                    </div> -->
+                    </div>
                 </div>
             </div>
             <!-- end col-12 -->
@@ -205,6 +205,27 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="newDegsinModal">
+        <div class="modal-dialog modal-dialog-newdesign">
+            <div class="modal-content modal-content-full">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <label class="col-sm-2 control-label" style="width: 102px;">新设计</label>
+                </div>
+                <div class="modal-body row">
+                    <div class="form-group col-sm-12">
+                        <label class="col-sm-2 control-label">设计名称</label>
+                        <div class="col-sm-10">
+                            <input class="form-control" v-model="designName">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-info" @click="newDegsin()"><i class="fa fa-fw fa-plus"></i>增加</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <!-- end page container -->
 </template>
@@ -218,6 +239,7 @@ export default {
       userInfo: '',
       currentHouses: '',
       currentDesign: '',
+      designName: '',
       search_text: '',
       orders: [],
       standards: [],
@@ -608,6 +630,31 @@ export default {
       } catch (error) {
         common.dealErrorCommon(_self, error);
       }
+    },
+    newDegsinDialog: async function () {
+      let _self = this
+      _self.designName = ''
+      $('#newDegsinModal').modal('show')
+    },
+    newDegsin: async function () {
+      let _self = this
+      try {
+        let response = await _self.$http.post(apiUrl + 'add_order', {
+          user_id: _self.$route.query.userId,
+          name: _self.$route.query.name,
+          phone: _self.$route.query.phone,
+          appuid: _self.$route.query.appuid,
+          houses_id: _self.$route.query.housesId,
+          houses_name: _self.$route.query.housesName,
+          design_name: _self.designName
+        })
+        $('#newDegsinModal').modal('hide')
+        _self.search_text = _self.$route.query.housesId
+        _self.searchOrder()
+        _self.getDegsin(response.data.info)
+      } catch (error) {
+        common.dealErrorCommon(_self, error);
+      }
     }
   }
 }
@@ -640,6 +687,10 @@ export default {
 .modal-dialog-design {
   width: 790px;
   height: 600px;
+}
+
+.modal-dialog-newdesign {
+  width: 390px;
 }
 
 .experience-e {

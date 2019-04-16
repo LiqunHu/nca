@@ -27,7 +27,7 @@ module.exports = db.defineModel('tbl_integration_orderkujiale', {
   },
   design_id: {
     // 设计编号
-    type: db.ID,
+    type: db.STRING(100),
     allowNull: false
   },
   design_name: {

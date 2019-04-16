@@ -1,4 +1,5 @@
 const moment = require('moment')
+const uuid = require('uuid')
 const common = require('../../util/CommonUtil')
 const logger = require('../../util/Logger').createLogger('IntegrationSRV')
 const model = require('../../model')
@@ -12,7 +13,9 @@ exports.IntegrationResource = (req, res) => {
   if (method === 'access') {
     access(req, res)
   } else if (method === 'search_order') {
-    search_order(req, res)
+    searchOrder(req, res)
+  } else if (method === 'add_order') {
+    addOrder(req, res)
   } else if (method === 'update_fpid') {
     updateFpid(req, res)
   } else if (method === 'update_desid') {
@@ -75,7 +78,7 @@ let access = async (req, res) => {
   }
 }
 
-let search_order = async (req, res) => {
+let searchOrder = async (req, res) => {
   try {
     let doc = common.docTrim(req.body),
       returnData = {},
@@ -99,6 +102,44 @@ let search_order = async (req, res) => {
         ? moment(r.order_created_at).format('YYYY-MM-DD')
         : null
       returnData.rows.push(result)
+    }
+    common.sendData(res, returnData)
+  } catch (error) {
+    common.sendFault(res, error)
+  }
+}
+
+let addOrder = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body),
+      returnData = {}
+    if (doc.user_id) {
+      let user = await tb_user.findOne({
+        where: {
+          user_id: doc.user_id
+        }
+      })
+
+      if (!user) {
+        user = await tb_user.create({
+          user_id: doc.user_id,
+          name: doc.name,
+          phone: doc.phone,
+          appuid: doc.appuid
+        })
+      }
+      let order = await tb_orderkujiale.create({
+        user_id: user.user_id,
+        houses_id: doc.houses_id,
+        houses_name: doc.houses_name,
+        design_id: uuid.v1().replace(/-/g, ''),
+        design_name: doc.design_name,
+        appuid: user.appuid
+      })
+
+      returnData = JSON.parse(JSON.stringify(order))
+    } else {
+      return common.sendError(res, 'integration_01')
     }
     common.sendData(res, returnData)
   } catch (error) {
