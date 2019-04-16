@@ -604,6 +604,7 @@ export default {
         let response = await _self.$http.post('/api/openapi/kujiale?method=kjlSync', {
           design_id: order.design_id
         })
+        common.dealSuccessCommon('同步成功')
       } catch (error) {
         common.dealErrorCommon(_self, error);
       }

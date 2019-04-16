@@ -636,6 +636,7 @@ let kjlSyncAct = async (req, res) => {
                       room_id: room.room_id,
                       orderkujiale_id: orderkujiale.orderkujiale_id,
                       materiel_amount: Math.ceil(m.number),
+                      materiel_code: m.code,
                       kjl_type: m.type,
                       kjl_imageurl: m.imageUrl,
                       kjl_name: m.name,
@@ -666,6 +667,7 @@ let kjlSyncAct = async (req, res) => {
                       room_id: room.room_id,
                       orderkujiale_id: orderkujiale.orderkujiale_id,
                       materiel_amount: Math.ceil(m.number),
+                      materiel_code: m.code,
                       kjl_type: m.type,
                       kjl_imageurl: m.imageUrl,
                       kjl_name: m.name,
@@ -675,7 +677,7 @@ let kjlSyncAct = async (req, res) => {
                       kjl_number: m.number,
                       kjl_unitprice: m.unitPrice,
                       kjl_realprice: m.realPrice,
-                      kjl_group: '硬装'
+                      kjl_group: '软装'
                     },
                     {
                       transaction: t

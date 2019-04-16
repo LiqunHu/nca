@@ -21,7 +21,11 @@ module.exports = db.defineModel('tbl_integration_ordermateriel', {
         defaultValue: 0,
         allowNull: true
     },
-    kjl_type: { //酷家乐type
+    materiel_code: { // 酷家乐物料编码
+        type: db.STRING(200),
+        allowNull: true
+    },
+    kjl_type: { // 酷家乐type
         type: db.STRING(20),
         allowNull: true
     },
