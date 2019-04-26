@@ -1,5 +1,7 @@
 const moment = require('moment')
 const uuid = require('uuid')
+const rp = require('request-promise')
+
 const common = require('../../util/CommonUtil')
 const logger = require('../../util/Logger').createLogger('IntegrationSRV')
 const model = require('../../model')
@@ -83,8 +85,7 @@ let searchOrder = async (req, res) => {
     let doc = common.docTrim(req.body),
       returnData = {},
       replacements = []
-    let queryStr =
-      `select * from tbl_integration_orderkujiale a, tbl_integration_user b where a.appuid = b.appuid `
+    let queryStr = `select * from tbl_integration_orderkujiale a, tbl_integration_user b where a.appuid = b.appuid `
     if (doc.search_text) {
       queryStr +=
         ' and (a.houses_id like ? or a.design_id like ? or b.phone like ? or b.name like ?)'
@@ -136,6 +137,25 @@ let addOrder = async (req, res) => {
         design_name: doc.design_name,
         appuid: user.appuid
       })
+
+      let options = {
+        method: 'POST',
+        uri:
+          'https://n2cs.dingdingxiujia.com/api/xiaoshouyi/design/PlanSync/kjlPlanSync',
+        formData: {
+          name: order.design_name,
+          siteId: order.houses_id,
+          designId: order.design_id,
+          houseImg: '',
+          area: '',
+          type: '',
+          cad: '',
+          panoramaImg: '',
+          materielCode: ''
+        }
+      }
+
+      let body = await rp(options)
 
       returnData = JSON.parse(JSON.stringify(order))
     } else {

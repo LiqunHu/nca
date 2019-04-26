@@ -733,7 +733,8 @@ let kjlSyncAct = async (req, res) => {
         orderkujiale_id: orderkujiale.orderkujiale_id
       }
     })
-    for(let r of result) {
+    let picData = []
+    for (let r of result) {
       await tb_renderpic.create({
         orderkujiale_id: orderkujiale.orderkujiale_id,
         pic_id: r.picId,
@@ -744,18 +745,20 @@ let kjlSyncAct = async (req, res) => {
         pano_link: r.panoLink,
         level: r.level
       })
+      picData.push({ room: r.roomName, effectPic: r.img })
     }
 
     let rendpics = []
-    for (let r of result){
-      if(r.picType === 0){
+    for (let r of result) {
+      if (r.picType === 0) {
         rendpics.push(r.picId)
       }
     }
 
     let options = {
       method: 'POST',
-      uri: 'https://openapi.kujiale.com/v2/renderpic/pano' + getAuthString('', {}),
+      uri:
+        'https://openapi.kujiale.com/v2/renderpic/pano' + getAuthString('', {}),
       json: true,
       headers: {
         'content-type': 'application/json'
@@ -769,6 +772,40 @@ let kjlSyncAct = async (req, res) => {
     let rpic = await rp(options)
     orderkujiale.orderkujiale_renderpic_url = rpic.d
     await orderkujiale.save()
+
+    // 调用销售易接口
+    let syoptions = {
+      method: 'POST',
+      uri:
+        'https://n2cs.dingdingxiujia.com/api/xiaoshouyi/design/PlanSync/kjlPlanSync',
+      formData: {
+        name: orderkujiale.design_name,
+        siteId: orderkujiale.houses_id,
+        designId: orderkujiale.design_id,
+        houseImg: orderkujiale.kujiale_planPic,
+        area: orderkujiale.kujiale_srcArea,
+        type: orderkujiale.kujiale_houseName,
+        cad: '',
+        panoramaImg: '',
+        materielCode: ''
+      }
+    }
+
+    let sybody = await rp(syoptions)
+    logger.info(sybody)
+
+    let picoptions = {
+      method: 'POST',
+      uri:
+        'https://n2cs.dingdingxiujia.com/api/xiaoshouyi/design/PlanSync/kjlPlanSync',
+      formData: {
+        designId: orderkujiale.design_id,
+        data: JSON.stringify(picData)
+      }
+    }
+
+    let picbody = await rp(picoptions)
+    logger.info(picbody)
 
     return common.sendData(res)
   } catch (error) {
