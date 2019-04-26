@@ -783,7 +783,7 @@ let kjlSyncAct = async (req, res) => {
         siteId: orderkujiale.houses_id,
         designId: orderkujiale.design_id,
         houseImg: orderkujiale.kujiale_planPic,
-        area: orderkujiale.kujiale_srcArea,
+        area: String(orderkujiale.kujiale_srcArea),
         type: orderkujiale.kujiale_houseName,
         cad: '',
         panoramaImg: '',
