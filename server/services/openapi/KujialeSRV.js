@@ -797,7 +797,7 @@ let kjlSyncAct = async (req, res) => {
     let picoptions = {
       method: 'POST',
       uri:
-        'https://n2cs.dingdingxiujia.com/api/xiaoshouyi/design/PlanSync/kjlPlanSync',
+        'https://n2cs.dingdingxiujia.com/api/xiaoshouyi/design/PlanSync/kjlEffectSync',
       formData: {
         designId: orderkujiale.design_id,
         data: JSON.stringify(picData)
