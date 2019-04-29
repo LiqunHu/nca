@@ -66,6 +66,7 @@ app.get('/files/:filetag', FileSRV.FileResource)
 //openApi
 app.post('/api/openapi/kujiale', services.KujialeSRV.KujialeControlResource)
 app.get('/api/openapi/kujiale', services.KujialeSRV.KujialeGetControlResource)
+app.post('/api/openapi/zowee', services.ZoweeSRV.ZoweeResource)
 
 app.post(
   '/api/integration/IntegrationControl',

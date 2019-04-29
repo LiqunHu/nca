@@ -1,6 +1,7 @@
 const moment = require('moment')
 const uuid = require('uuid')
 const rp = require('request-promise')
+const soap = require('soap')
 
 const common = require('../../util/CommonUtil')
 const logger = require('../../util/Logger').createLogger('IntegrationSRV')
