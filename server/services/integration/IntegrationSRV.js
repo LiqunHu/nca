@@ -66,7 +66,8 @@ let access = async (req, res) => {
             design_id: doc.design_id,
             design_name: doc.design_name,
             design_address: doc.design_address,
-            appuid: user.appuid
+            appuid: user.appuid,
+            type: '1'
           })
         }
       }
@@ -86,7 +87,7 @@ let searchOrder = async (req, res) => {
     let doc = common.docTrim(req.body),
       returnData = {},
       replacements = []
-    let queryStr = `select * from tbl_integration_orderkujiale a, tbl_integration_user b where a.appuid = b.appuid `
+    let queryStr = `select * from tbl_integration_orderkujiale a, tbl_integration_user b where a.appuid = b.appuid and a.type = '1'`
     if (doc.search_text) {
       queryStr +=
         ' and (a.houses_id like ? or a.design_id like ? or b.phone like ? or b.name like ?)'
@@ -136,7 +137,8 @@ let addOrder = async (req, res) => {
         houses_name: doc.houses_name,
         design_id: uuid.v1().replace(/-/g, ''),
         design_name: doc.design_name,
-        appuid: user.appuid
+        appuid: user.appuid,
+        type: '1'
       })
 
       let options = {

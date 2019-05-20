@@ -116,5 +116,10 @@ module.exports = db.defineModel('tbl_integration_orderkujiale', {
     // 渲染图链接
     type: db.STRING(200),
     allowNull: true
+  },
+  type: {
+    // 渲染图链接
+    type: db.INTEGER,
+    allowNull: true
   }
 })
