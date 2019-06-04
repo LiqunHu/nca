@@ -34,15 +34,19 @@ let updateZowee = async (req, res) => {
       brandid: config.zowee.brandid,
       contracttypeid: contracttypeid,
       finishdate: doc.finishdate,
-      filename: [doc.filename],
-      filebyte: [doc.filebyte],
+      filename: {
+        string: [doc.filename]
+      },
+      filebyte: {
+        base64Binary: [doc.filebyte]
+      },
       designer: doc.designer,
       designphone: doc.designphone,
       remark: doc.remark,
       opuser: doc.opuser,
       extends: []
     }
-    
+
     let client = await soap.createClientAsync(config.zowee.soapUrl)
     let result = await client.OrderUpload2Async(args)
     if (result.OrderUpload2Result.string[0] === '0') {
@@ -64,8 +68,12 @@ let reupdateZowee = async (req, res) => {
       brandid: config.zowee.brandid,
       contracttypeid: config.zowee.contracttypeid,
       finishdate: doc.finishdate,
-      filename: [doc.filename],
-      filebyte: [doc.filebyte],
+      filename: {
+        string: [doc.filename]
+      },
+      filebyte: {
+        base64Binary: [doc.filebyte]
+      },
       designer: doc.designer,
       designphone: doc.designphone,
       remark: doc.remark,
