@@ -1,4 +1,5 @@
 const soap = require('soap')
+const moment = require('moment')
 
 const common = require('../../util/CommonUtil')
 const logger = require('../../util/Logger').createLogger('IntegrationSRV')
@@ -18,6 +19,7 @@ exports.ZoweeResource = (req, res) => {
 let updateZowee = async (req, res) => {
   try {
     let doc = common.docTrim(req.body)
+
     let contracttypeid = config.zowee.contracttypeid
     if (doc.contracttype === '2') {
       contracttypeid = config.zowee.remedyid
@@ -32,27 +34,25 @@ let updateZowee = async (req, res) => {
       brandid: config.zowee.brandid,
       contracttypeid: contracttypeid,
       finishdate: doc.finishdate,
-      filename: {
-        string: [doc.filename]
-      },
-      filebyte: {
-        base64Binary: [doc.filebyte]
-      },
+      filename: [doc.filename],
+      filebyte: [doc.filebyte],
       designer: doc.designer,
       designphone: doc.designphone,
       remark: doc.remark,
       opuser: doc.opuser,
-      extends: ''
+      extends: []
     }
+    
     let client = await soap.createClientAsync(config.zowee.soapUrl)
     let result = await client.OrderUpload2Async(args)
     if (result.OrderUpload2Result.string[0] === '0') {
       logger.error(result.OrderUpload2Result.string[1])
       return common.sendError(res, '', result.OrderUpload2Result.string[1])
     }
+
     common.sendData(res)
   } catch (error) {
-    throw error
+    return common.sendFault(res, error)
   }
 }
 
@@ -64,17 +64,13 @@ let reupdateZowee = async (req, res) => {
       brandid: config.zowee.brandid,
       contracttypeid: config.zowee.contracttypeid,
       finishdate: doc.finishdate,
-      filename: {
-        string: [doc.filename]
-      },
-      filebyte: {
-        base64Binary: [doc.filebyte]
-      },
+      filename: [doc.filename],
+      filebyte: [doc.filebyte],
       designer: doc.designer,
       designphone: doc.designphone,
       remark: doc.remark,
       opuser: doc.opuser,
-      extends: ''
+      extends: []
     }
     let client = await soap.createClientAsync(config.zowee.soapUrl)
     let result = await client.ReOrderUpload2Async(args)
@@ -84,6 +80,6 @@ let reupdateZowee = async (req, res) => {
     }
     common.sendData(res)
   } catch (error) {
-    throw error
+    return common.sendFault(res, error)
   }
 }
