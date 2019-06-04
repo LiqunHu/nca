@@ -40,6 +40,7 @@ app.use(
 )
 app.use(
   bodyParser.urlencoded({
+    limit: '50mb',
     extended: false
   })
 )
