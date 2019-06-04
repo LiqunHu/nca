@@ -144,7 +144,7 @@ exports.createWebSocket = function() {
 }
 
 exports.dealErrorCommon = function(obj, response) {
-    if (response.status > 699 && response.status < 800) {
+    if (response.status > 400 && response.status < 800) {
         console.log('700 error')
         BootstrapDialog.show({
             title: '<i class= "fa fa-fw fa-info-circle"></i><strong>错误信息</strong>',
@@ -158,27 +158,28 @@ exports.dealErrorCommon = function(obj, response) {
                 }
             }]
         })
-    } else if (response.status === 404) {
-        obj.$router.push({
-            path: '/error404'
-        })
-    } else if (response.status === 401) {
-        if (response.data.errno === -2) {
-            obj.setError('从其他地方登录', '从其他地方登录')
-        } else {
-            obj.setError('未经授权：访问由于凭据无效被拒绝', '未经授权：访问由于凭据无效被拒绝')
-        }
+    } 
+    // else if (response.status === 404) {
+    //     obj.$router.push({
+    //         path: '/error404'
+    //     })
+    // } else if (response.status === 401) {
+    //     if (response.data.errno === -2) {
+    //         obj.setError('从其他地方登录', '从其他地方登录')
+    //     } else {
+    //         obj.setError('未经授权：访问由于凭据无效被拒绝', '未经授权：访问由于凭据无效被拒绝')
+    //     }
 
-        obj.$router.push({
-            path: '/error401'
-        })
-    } else {
-      console.log(response)
-      obj.setError(response.status, response)
-        obj.$router.push({
-            path: '/error'
-        })
-    }
+    //     obj.$router.push({
+    //         path: '/error401'
+    //     })
+    // } else {
+    //   console.log(response)
+    //   obj.setError(response.status, response)
+    //     obj.$router.push({
+    //         path: '/error'
+    //     })
+    // }
 }
 
 exports.dealAlertCommon = function(obj, response) {
@@ -243,6 +244,35 @@ exports.dealSuccessCommon = function(message,time) {
     window.setTimeout(function () {
         dlg.close();
     },4000);
+}
+
+exports.dealSuccessDelayCommon = function(message, cb) {
+    var dlg = BootstrapDialog.show({
+        title: '<i class= "fa fa-fw fa-info-circle"></i><strong>提示信息</strong>',
+        cssClass: 'modal-success',
+        closable: false,
+        message: '<i class="tex t-warning glyphicon glyphicon-ok" style="font-size: 40px"></i>' + message,
+        buttons: [{
+            label: '<i class= "fa fa-fw fa-close disabled"></i>关闭 (<span class="second">60</span>)',
+            cssClass: 'btn-info disabled'
+        }]
+    })
+    $(function() {
+        var wait = 60;
+        timeOut();
+        function timeOut() {
+            if(wait != 0) {
+                setTimeout(function() {
+                    $('.second').text(--wait);
+                    timeOut();
+                }, 1000);
+            }
+        }
+    });
+    window.setTimeout(function () {
+        cb()
+        dlg.close();
+    },60000);
 }
 
 exports.dealSuccessCommonRF = function(message,time) {
