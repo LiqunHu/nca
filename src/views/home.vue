@@ -565,8 +565,7 @@ export default {
           // var data = JSON.parse(ev.data)
         };
       }
-
-      $("#designName").editable("setValue", body.name);
+      $("#designName").editable("setValue", body.name ? body.name : "未命名");
       $("#degsinModalBody").height($(window).height() - 80);
       $("#kujialeiframe").attr("src", body.iframeurl);
       $("#selectModal").modal("hide");

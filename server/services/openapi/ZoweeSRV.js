@@ -7,7 +7,17 @@ const config = require('../../config')
 
 exports.ZoweeResource = (req, res) => {
   let method = req.query.method
-  if (method === 'update_zowee') {
+  if (method === 'getBrand_zowee') {
+    getbrandZowee(req, res)
+  } else if (method === 'getContractType_zowee') {
+    getContractType(req, res)
+  } else if (method === 'getContractPrice_zowee') {
+    getContractPrice(req, res)
+  } else if (method === 'getContractInfo_zowee') {
+    getContractInfo(req, res)
+  } else if (method === 'joinPriceConfirm_zowee') {
+    joinPriceConfirm(req, res)
+  } else if (method === 'update_zowee') {
     updateZowee(req, res)
   } else if (method === 'reupdate_zowee') {
     reupdateZowee(req, res)
@@ -16,23 +26,109 @@ exports.ZoweeResource = (req, res) => {
   }
 }
 
+let getbrandZowee = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+
+    let client = await soap.createClientAsync(config.zowee.soapUrl)
+    let result = await client.GetBrandAsync({ JOINNO: doc.JOINNO })
+    if (result.GetBrandResult.string[0] === '0') {
+      logger.error(result.GetBrandResult.string[1])
+      return common.sendError(res, '', result.GetBrandResult.string[1])
+    }
+
+    common.sendData(res, { data: result.GetBrandResult.string[1] })
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
+let getContractType = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+
+    let client = await soap.createClientAsync(config.zowee.soapUrl)
+    let result = await client.GetContractTypeAsync({ BRANDID: doc.BRANDID })
+    if (result.GetContractTypeResult.string[0] === '0') {
+      logger.error(result.GetContractTypeResult.string[1])
+      return common.sendError(res, '', result.GetContractTypeResult.string[1])
+    }
+
+    common.sendData(res, { data: result.GetContractTypeResult.string[1] })
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
+let getContractPrice = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+
+    let client = await soap.createClientAsync(config.zowee.soapUrl)
+    let result = await client.GetContractPriceAsync({ orderno: doc.orderno })
+    if (result.GetContractPriceResult.string[0] === '0') {
+      logger.error(result.GetContractPriceResult.string[1])
+      return common.sendError(res, '', result.GetContractPriceResult.string[1])
+    }
+
+    common.sendData(res, { data: result.GetContractPriceResult.string[1] })
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
+let getContractInfo = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+
+    let client = await soap.createClientAsync(config.zowee.soapUrl)
+    let result = await client.GetContractInfoAsync({ orderno: doc.orderno })
+    if (result.GetContractInfoResult.string[0] === '0') {
+      logger.error(result.GetContractInfoResult.string[1])
+      return common.sendError(res, '', result.GetContractInfoResult.string[1])
+    }
+
+    common.sendData(res, { data: result.GetContractInfoResult.string[1] })
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
+let joinPriceConfirm = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+
+    let client = await soap.createClientAsync(config.zowee.soapUrl)
+    let result = await client.JoinPriceConfirmAsync({
+      orderno: doc.orderno,
+      opstate: doc.opstate,
+      remark: doc.remark,
+      opuser: doc.opuser
+    })
+    if (result.JoinPriceConfirmResult.string[0] === '0') {
+      logger.error(result.JoinPriceConfirmResult.string[1])
+      return common.sendError(res, '', result.JoinPriceConfirmResult.string[1])
+    }
+
+    common.sendData(res)
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
 let updateZowee = async (req, res) => {
   try {
     let doc = common.docTrim(req.body)
 
-    let contracttypeid = config.zowee.contracttypeid
-    if (doc.contracttype === '2') {
-      contracttypeid = config.zowee.remedyid
-    }
     let args = {
-      joinno: config.zowee.joinno,
-      shopno: config.zowee.shopno,
+      joinno: doc.joinno,
+      shopno: doc.shopno,
       orderno: doc.orderno,
       customername: doc.customername,
       address: doc.address,
       phone: doc.phone,
-      brandid: config.zowee.brandid,
-      contracttypeid: contracttypeid,
+      brandid: doc.brandid,
+      contracttypeid: doc.contracttypeid,
       finishdate: doc.finishdate,
       filename: {
         string: [doc.filename]
@@ -54,7 +150,7 @@ let updateZowee = async (req, res) => {
       return common.sendError(res, '', result.OrderUpload2Result.string[1])
     }
 
-    common.sendData(res)
+    common.sendData(res, { orderno: result.ReOrderUpload2Result.string[1] })
   } catch (error) {
     return common.sendFault(res, error)
   }
@@ -65,8 +161,8 @@ let reupdateZowee = async (req, res) => {
     let doc = common.docTrim(req.body)
     let args = {
       orderno: doc.orderno,
-      brandid: config.zowee.brandid,
-      contracttypeid: config.zowee.contracttypeid,
+      brandid: doc.brandid,
+      contracttypeid: doc.contracttypeid,
       finishdate: doc.finishdate,
       filename: {
         string: [doc.filename]
@@ -86,7 +182,7 @@ let reupdateZowee = async (req, res) => {
       logger.error(result.ReOrderUpload2Result.string[1])
       return common.sendError(res, '', result.ReOrderUpload2Result.string[1])
     }
-    common.sendData(res)
+    common.sendData(res, { orderno: result.ReOrderUpload2Result.string[1] })
   } catch (error) {
     return common.sendFault(res, error)
   }
