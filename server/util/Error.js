@@ -15,5 +15,6 @@ module.exports = {
     kujiale_10: '该邮箱绑定产生了错误',
     kujiale_11: '生成酷家乐数据失败',
     kujiale_12: '获取酷家乐失败',
+    kujiale_13: '绑定失败',
     integration_01: '为传递用户信息'
 };

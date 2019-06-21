@@ -29,6 +29,8 @@ exports.KujialeControlResource = (req, res) => {
     generateKJLAct(req, res)
   } else if (method === 'kjlSync') {
     kjlSyncAct(req, res)
+  } else if (method === 'bind') {
+    bindAct(req, res)
   } else {
     common.sendError(res, 'common_01')
   }
@@ -807,6 +809,35 @@ let kjlSyncAct = async (req, res) => {
     let picbody = await rp(picoptions)
     logger.info(picbody)
 
+    return common.sendData(res)
+  } catch (error) {
+    return common.sendFault(res, error)
+  }
+}
+
+let bindAct = async (req, res) => {
+  try {
+    let doc = common.docTrim(req.body)
+
+    let options = {
+      method: 'POST',
+      uri:
+        'https://openapi.kujiale.com/v2/user/bind' +
+        getAuthString(doc.appuid, {}),
+      json: true,
+      headers: {
+        'content-type': 'application/json;charset=utf-8'
+      },
+      body: {
+        email: doc.email
+      }
+    }
+    let body = await rp(options)
+    let result = JSON.parse(body)
+    if (result.c !== '0') {
+      return common.sendError(res, 'kujiale_13')
+    }
+    common.sendData(res)
     return common.sendData(res)
   } catch (error) {
     return common.sendFault(res, error)
