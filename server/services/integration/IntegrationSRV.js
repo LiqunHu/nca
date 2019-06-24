@@ -154,7 +154,8 @@ let addOrder = async (req, res) => {
           type: '',
           cad: '',
           panoramaImg: '',
-          materielCode: ''
+          materielCode: '',
+          ownerid: user.appuid
         }
       }
 

@@ -790,7 +790,7 @@ let kjlSyncAct = async (req, res) => {
         cad: '',
         panoramaImg: '',
         materielCode: '',
-        ownerid:orderkujiale.appuid
+        ownerid: orderkujiale.appuid
       }
     }
 
@@ -803,8 +803,7 @@ let kjlSyncAct = async (req, res) => {
         'https://n2cs.dingdingxiujia.com/api/xiaoshouyi/design/PlanSync/kjlEffectSync',
       formData: {
         designId: orderkujiale.design_id,
-        data: JSON.stringify(picData),
-        ownerid:orderkujiale.appuid
+        data: JSON.stringify(picData)
       }
     }
 
