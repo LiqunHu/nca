@@ -789,7 +789,8 @@ let kjlSyncAct = async (req, res) => {
         type: orderkujiale.kujiale_houseName,
         cad: '',
         panoramaImg: '',
-        materielCode: ''
+        materielCode: '',
+        ownerid:orderkujiale.appuid
       }
     }
 
