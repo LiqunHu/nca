@@ -834,9 +834,15 @@ let bindAct = async (req, res) => {
       }
     }
     let body = await rp(options)
-    let result = JSON.parse(body)
+    let result
+    if(typeof(body) === 'object'){
+      result = body
+    } else {
+      result = JSON.parse(body)
+    }
+
     if (result.c !== '0') {
-      return common.sendError(res, 'kujiale_13')
+      return common.sendError(res, '', result.m)
     }
     common.sendData(res)
     return common.sendData(res)
