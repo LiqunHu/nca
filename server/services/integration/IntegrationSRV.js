@@ -89,12 +89,9 @@ let searchOrder = async (req, res) => {
       replacements = []
     let queryStr = `select * from tbl_integration_orderkujiale a, tbl_integration_user b where a.appuid = b.appuid and a.type = '1'`
     if (doc.search_text) {
-      queryStr +=
-        ' and (a.houses_id like ? or a.design_id like ? or b.phone like ? or b.name like ?)'
-      replacements.push('%' + doc.search_text + '%')
-      replacements.push('%' + doc.search_text + '%')
-      replacements.push('%' + doc.search_text + '%')
-      replacements.push('%' + doc.search_text + '%')
+      queryStr += ' and (a.houses_id = ? or a.design_id = ?)'
+      replacements.push(doc.search_text)
+      replacements.push(doc.search_text)
     }
     queryStr += ' order by a.created_at desc LIMIT 8'
     let result = await common.simpleSelect(sequelize, queryStr, replacements)
