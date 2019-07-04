@@ -747,7 +747,7 @@ export default {
           design_name: _self.designName
         });
         $("#newDegsinModal").modal("hide");
-        _self.search_text = _self.$route.query.housesId;
+        _self.search_text = response.data.info.design_id;
         _self.searchOrder();
         _self.getDegsin(response.data.info);
       } catch (error) {
