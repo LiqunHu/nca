@@ -820,6 +820,13 @@ let bindAct = async (req, res) => {
   try {
     let doc = common.docTrim(req.body)
 
+    let user = {
+      name: doc.name,
+      telephone: doc.phone,
+      appuid: doc.appuid
+    }
+    await getAccessToken(user)
+
     let options = {
       method: 'POST',
       uri:
