@@ -710,7 +710,12 @@ export default {
         function timeOut() {
           if (wait != 0) {
             setTimeout(function() {
-              $("#generateData").text("数据处理" + --wait);
+              if (wait != 0) {
+                $("#generateData").text("数据处理" + --wait);
+              } else {
+                $("#generateData").text("数据处理");
+              }
+
               timeOut();
             }, 1000);
           }
@@ -719,7 +724,6 @@ export default {
         timeOut();
 
         window.setTimeout(function() {
-          $("#generateData").text("数据处理");
           $("#generateData").removeClass("disabled");
           _self.searchOrder();
         }, 60000);
