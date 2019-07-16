@@ -787,12 +787,13 @@ let kjlSyncAct = async (req, res) => {
         houseImg: orderkujiale.kujiale_planPic,
         area: String(orderkujiale.kujiale_srcArea),
         type: orderkujiale.kujiale_houseName,
-        cad: orderkujiale.orderkujiale_cad_url,
-        panoramaImg: orderkujiale.orderkujiale_renderpic_url,
+        cad: orderkujiale.orderkujiale_cad_url || '',
+        panoramaImg: orderkujiale.orderkujiale_renderpic_url || '',
         materielCode: '',
         ownerid: orderkujiale.appuid
       }
     }
+    console.log(syoptions)
 
     let sybody = await rp(syoptions)
     logger.info(sybody)
@@ -842,7 +843,7 @@ let bindAct = async (req, res) => {
     }
     let body = await rp(options)
     let result
-    if(typeof(body) === 'object'){
+    if (typeof body === 'object') {
       result = body
     } else {
       result = JSON.parse(body)
