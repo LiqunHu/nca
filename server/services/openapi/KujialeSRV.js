@@ -793,7 +793,6 @@ let kjlSyncAct = async (req, res) => {
         ownerid: orderkujiale.appuid
       }
     }
-    console.log(syoptions)
 
     let sybody = await rp(syoptions)
     logger.info(sybody)
