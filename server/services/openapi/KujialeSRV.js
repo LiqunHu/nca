@@ -749,7 +749,9 @@ let kjlSyncAct = async (req, res) => {
         level: r.level
       })
       picData.push({ room: r.roomName, effectPic: r.img })
-      rendpics.push(r.picId)
+      if (r.picType === 1) {
+        rendpics.push(r.picId)
+      }
     }
 
     let options = {
