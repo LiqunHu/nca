@@ -736,6 +736,7 @@ let kjlSyncAct = async (req, res) => {
       }
     })
     let picData = []
+    let rendpics = []
     for (let r of result) {
       await tb_renderpic.create({
         orderkujiale_id: orderkujiale.orderkujiale_id,
@@ -748,13 +749,7 @@ let kjlSyncAct = async (req, res) => {
         level: r.level
       })
       picData.push({ room: r.roomName, effectPic: r.img })
-    }
-
-    let rendpics = []
-    for (let r of result) {
-      if (r.picType === 0) {
-        rendpics.push(r.picId)
-      }
+      rendpics.push(r.picId)
     }
 
     let options = {
