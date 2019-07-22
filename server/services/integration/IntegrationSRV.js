@@ -141,7 +141,7 @@ let addOrder = async (req, res) => {
       let options = {
         method: 'POST',
         uri:
-          'https://n2cs.dingdingxiujia.com/api/xiaoshouyi/design/PlanSync/kjlPlanSync',
+          'https://n2cs-prod.dingdingxiujia.com/api/xiaoshouyi/design/PlanSync/kjlPlanSync',
         formData: {
           name: order.design_name,
           siteId: order.houses_id,
