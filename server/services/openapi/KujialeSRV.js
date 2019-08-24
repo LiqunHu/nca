@@ -210,7 +210,7 @@ let getIframeSrcAct = async (req, res) => {
         orderkujiale.desid = designId
         orderkujiale.kujiale_planPic = dsinfo.planPic
         orderkujiale.kujiale_commName = dsinfo.commName
-        orderkujiale.kujiale_city = dsinfo.city
+        orderkujiale.kujiale_city = dsinfo.city || ''
         orderkujiale.kujiale_srcArea = dsinfo.srcArea
         orderkujiale.kujiale_specName = dsinfo.specName
         orderkujiale.kujiale_houseName = dsinfo.name
